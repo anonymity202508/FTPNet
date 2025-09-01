@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+     <meta charset="UTF-8">
+    <title>Mental Health Symptom Timeline</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .chart {
+            margin: 20px auto;  /* Reduced vertical margin */
+            width: 90%;
+        }
+        .axis text {
+            font-size: 12px;
+        }
+        .axis-label {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .line {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 2px;
+        }
+        .dot {
+            fill: steelblue;
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+        .dot:hover {
+            fill: orange;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: lightyellow;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            pointer-events: none;
+            font-size: 12px;
+            max-width: 300px;
+            box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
+        }
+        .symptom-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 2px;  /* Reduced spacing */
+            text-align: left;
+            padding-left: 60px;
+        }
+        .symptom-desc {
+            font-size: 14px;
+            text-align: left;
+            padding-left: 60px;
+            margin-bottom: 10px;
+        }
+        .symptom-desc em {
+            font-style: italic;
+        }
+        .note {
+            font-style: italic;
+            color: #666;
+            margin-top: 2px;  /* Reduced to half of original spacing */
+            font-size: 14px;
+            text-align: left;
+            padding-left: 60px;
+        }
+        .chart-container {
+            margin-bottom: 30px;  /* Reduced spacing between charts */
+        }
+        .post-display {
+            margin-top: 5px;  /* Reduced spacing */
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            font-size: 14px;
+        }
+        .post-date {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="visualization"></div>
+
+    <script>
+        // [Previous rawData and symptoms definitions remain the same...]
+        // Raw data
+        const rawData = [
+  {date:"2019-10-16",scores:{"Depressed mood":0.73,"Fatigue":0.42,"Suicidal thoughts":0.88,"Self-blame":0.80,"Appetite disturbance":0.20},text:"Even the hotline has given up on me. I don’t deserve to exist."},
+  {date:"2019-10-17",scores:{"Depressed mood":0.67,"Fatigue":0.31,"Suicidal thoughts":0.82,"Self-blame":0.75,"Appetite disturbance":0.15},text:"I’m sorry, I shouldn’t have come into this world."},
+  {date:"2019-10-17",scores:{"Depressed mood":0.52,"Fatigue":0.78,"Suicidal thoughts":0.68,"Self-blame":0.60,"Appetite disturbance":0.10},text:"I’m so tired. I kind of want to give up."},
+  {date:"2019-10-17",scores:{"Depressed mood":0.63,"Fatigue":0.72,"Suicidal thoughts":0.77,"Self-blame":0.65,"Appetite disturbance":0.05},text:"I want to sleep forever."},
+  {date:"2019-10-18",scores:{"Depressed mood":0.47,"Fatigue":0.83,"Suicidal thoughts":0.53,"Self-blame":0.40,"Appetite disturbance":0.85},text:"I can only dream of sleeping. I have no appetite and no interest in food."},
+  {date:"2019-10-18",scores:{"Depressed mood":0.58,"Fatigue":0.49,"Suicidal thoughts":0.93,"Self-blame":0.70,"Appetite disturbance":0.25},text:"I want to die."},
+  {date:"2019-10-18",scores:{"Depressed mood":0.63,"Fatigue":0.40,"Suicidal thoughts":0.41,"Self-blame":0.35,"Appetite disturbance":0.92},text:"I have no appetite at all, no interest in food."},
+  {date:"2019-10-19",scores:{"Depressed mood":0.57,"Fatigue":0.48,"Suicidal thoughts":0.71,"Self-blame":0.55,"Appetite disturbance":0.30},text:"Can’t I just lose passion for life?"},
+  {date:"2019-10-19",scores:{"Depressed mood":0.43,"Fatigue":0.79,"Suicidal thoughts":0.27,"Self-blame":0.35,"Appetite disturbance":0.10},text:"Forced to go to sleep."},
+  {date:"2019-10-20",scores:{"Depressed mood":0.69,"Fatigue":0.33,"Suicidal thoughts":0.41,"Self-blame":0.50,"Appetite disturbance":0.15},text:"Now I can cry without holding back."},
+  {date:"2019-10-21",scores:{"Depressed mood":0.51,"Fatigue":0.39,"Suicidal thoughts":0.94,"Self-blame":0.65,"Appetite disturbance":0.10},text:"Should I buy more razor blades?"},
+  {date:"2019-10-21",scores:{"Depressed mood":0.72,"Fatigue":0.47,"Suicidal thoughts":0.69,"Self-blame":0.70,"Appetite disturbance":0.20},text:"I’m in so much pain."},
+  {date:"2019-10-21",scores:{"Depressed mood":0.59,"Fatigue":0.43,"Suicidal thoughts":0.48,"Self-blame":0.65,"Appetite disturbance":0.10},text:"So many people broke their promises."},
+  {date:"2019-10-22",scores:{"Depressed mood":0.37,"Fatigue":0.29,"Suicidal thoughts":0.32,"Self-blame":0.20,"Appetite disturbance":0.05},text:"Birds of a feather flock together."},
+  {date:"2019-10-24",scores:{"Depressed mood":0.84,"Fatigue":0.37,"Suicidal thoughts":0.52,"Self-blame":0.70,"Appetite disturbance":0.15},text:"I’m so sad."},
+  {date:"2019-10-29",scores:{"Depressed mood":0.79,"Fatigue":0.41,"Suicidal thoughts":0.49,"Self-blame":0.65,"Appetite disturbance":0.20},text:"I’m so sad."},
+  {date:"2019-10-30",scores:{"Depressed mood":0.62,"Fatigue":0.38,"Suicidal thoughts":0.73,"Self-blame":0.60,"Appetite disturbance":0.15},text:"The world laughs at my madness; I laugh at its blindness."},
+  {date:"2019-11-03",scores:{"Depressed mood":0.57,"Fatigue":0.83,"Suicidal thoughts":0.68,"Self-blame":0.55,"Appetite disturbance":0.25},text:"It’s so exhausting to live."},
+  {date:"2019-11-03",scores:{"Depressed mood":0.63,"Fatigue":0.47,"Suicidal thoughts":0.92,"Self-blame":0.70,"Appetite disturbance":0.20},text:"I want to die."},
+  {date:"2019-11-04",scores:{"Depressed mood":0.53,"Fatigue":0.69,"Suicidal thoughts":0.46,"Self-blame":0.50,"Appetite disturbance":0.60},text:"I felt awful all morning—palpitations, shortness of breath."},
+  {date:"2019-11-05",scores:{"Depressed mood":0.71,"Fatigue":0.58,"Suicidal thoughts":0.79,"Self-blame":0.65,"Appetite disturbance":0.30},text:"I can’t hold on much longer."},
+  {date:"2019-11-05",scores:{"Depressed mood":0.64,"Fatigue":0.39,"Suicidal thoughts":0.47,"Self-blame":0.60,"Appetite disturbance":0.15},text:"I’ve never been liked."},
+  {date:"2019-11-06",scores:{"Depressed mood":0.68,"Fatigue":0.51,"Suicidal thoughts":0.91,"Self-blame":0.70,"Appetite disturbance":0.20},text:"Suicide attempt."},
+  {date:"2019-11-07",scores:{"Depressed mood":0.61,"Fatigue":0.46,"Suicidal thoughts":0.72,"Self-blame":0.55,"Appetite disturbance":0.15},text:"If I send out a distress signal, will anyone respond?"},
+  {date:"2019-11-10",scores:{"Depressed mood":0.42,"Fatigue":0.53,"Suicidal thoughts":0.29,"Self-blame":0.30,"Appetite disturbance":0.10},text:"Went for a check-up."},
+  {date:"2019-11-19",scores:{"Depressed mood":0.31,"Fatigue":0.28,"Suicidal thoughts":0.19,"Self-blame":0.15,"Appetite disturbance":0.05},text:"Feels like I haven’t posted in a while. Just updating about my recent situation. Mood’s been okay, just a bit angry and upset today."},
+  {date:"2019-11-29",scores:{"Depressed mood":0.57,"Fatigue":0.48,"Suicidal thoughts":0.89,"Self-blame":0.70,"Appetite disturbance":0.20},text:"Why am I still alive? I really want to die. Why didn’t it work? Things would be better if it had."},
+  {date:"2019-12-10",scores:{"Depressed mood":0.61,"Fatigue":0.46,"Suicidal thoughts":0.94,"Self-blame":0.75,"Appetite disturbance":0.25},text:"I want to die now."},
+  {date:"2019-12-20",scores:{"Depressed mood":0.43,"Fatigue":0.38,"Suicidal thoughts":0.31,"Self-blame":0.35,"Appetite disturbance":0.10},text:"Went to see a psychologist for talk therapy."},
+  {date:"2019-12-29",scores:{"Depressed mood":0.49,"Fatigue":0.37,"Suicidal thoughts":0.42,"Self-blame":0.50,"Appetite disturbance":0.20},text:"Some things are easier said than done. Personal experiences are the same—no one can truly understand another’s pain. People say ‘stay happy, stay positive,’ but is it really that easy?"},
+  {date:"2019-12-30",scores:{"Depressed mood":0.63,"Fatigue":0.41,"Suicidal thoughts":0.87,"Self-blame":0.70,"Appetite disturbance":0.20},text:"Is anyone there? Please, kill me."},
+  {date:"2019-12-30",scores:{"Depressed mood":0.52,"Fatigue":0.43,"Suicidal thoughts":0.81,"Self-blame":0.60,"Appetite disturbance":0.15},text:"This might be my last year."},
+  {date:"2020-01-08",scores:{"Depressed mood":0.58,"Fatigue":0.39,"Suicidal thoughts":0.93,"Self-blame":0.70,"Appetite disturbance":0.15},text:"I think I’ve already decided when I’ll die."},
+  {date:"2020-01-11",scores:{"Depressed mood":0.69,"Fatigue":0.47,"Suicidal thoughts":0.83,"Self-blame":0.75,"Appetite disturbance":0.20},text:"Life is meaningless."},
+  {date:"2020-01-17",scores:{"Depressed mood":0.53,"Fatigue":0.42,"Suicidal thoughts":0.59,"Self-blame":0.60,"Appetite disturbance":0.25},text:"Am I not even worthy of things I like? They say buying things I like is a waste of money. Ha."},
+  {date:"2020-01-24",scores:{"Depressed mood":0.64,"Fatigue":0.37,"Suicidal thoughts":0.89,"Self-blame":0.70,"Appetite disturbance":0.15},text:"Please, someone kill me now."},
+  {date:"2020-02-03",scores:{"Depressed mood":0.48,"Fatigue":0.43,"Suicidal thoughts":0.61,"Self-blame":0.55,"Appetite disturbance":0.20},text:"Am I just a curse?"},
+  {date:"2020-02-11",scores:{"Depressed mood":0.59,"Fatigue":0.41,"Suicidal thoughts":0.72,"Self-blame":0.65,"Appetite disturbance":0.15},text:"Someone as selfish and cold as me shouldn’t exist in this world."},
+  {date:"2020-02-21",scores:{"Depressed mood":0.47,"Fatigue":0.63,"Suicidal thoughts":0.39,"Self-blame":0.45,"Appetite disturbance":0.10},text:"Lately I’ve been overthinking a lot."},
+  {date:"2020-03-03",scores:{"Depressed mood":0.51,"Fatigue":0.42,"Suicidal thoughts":0.43,"Self-blame":0.50,"Appetite disturbance":0.10},text:"Does no one want to believe me?"},
+  {date:"2020-03-06",scores:{"Depressed mood":0.43,"Fatigue":0.52,"Suicidal thoughts":0.37,"Self-blame":0.40,"Appetite disturbance":0.05},text:"Reading a book. Also, I haven’t taken meds in a long time—maybe over a month."},
+  {date:"2020-03-08",scores:{"Depressed mood":0.59,"Fatigue":0.73,"Suicidal thoughts":0.68,"Self-blame":0.55,"Appetite disturbance":0.15},text:"Haven’t taken meds in a long time. Before, the doctor asked, ‘Can I prescribe you meds?’ I confidently said, ‘Okay, if so.’ But didn’t expect to stop so early. Now, I can’t sleep, can’t eat, no desire. I don’t want meds, don’t want hospital. I’ve already written my… (unfinished thought)."},
+  {date:"2020-03-15",scores:{"Depressed mood":0.41,"Fatigue":0.49,"Suicidal thoughts":0.33,"Self-blame":0.35,"Appetite disturbance":0.10},text:"Suddenly…"},
+  {date:"2020-03-22",scores:{"Depressed mood":0.53,"Fatigue":0.69,"Suicidal thoughts":0.47,"Self-blame":0.50,"Appetite disturbance":0.50},text:"I feel terrible. Yesterday I only ate a small piece of bread, had stomach pain. Now I have no appetite, don’t want to sleep, not even thirsty."},
+  {date:"2020-04-02",scores:{"Depressed mood":0.71,"Fatigue":0.48,"Suicidal thoughts":0.79,"Self-blame":0.65,"Appetite disturbance":0.25},text:"Everyone says I have no value. If that’s true, why was I even born?"},
+  {date:"2020-04-13",scores:{"Depressed mood":0.62,"Fatigue":0.47,"Suicidal thoughts":0.69,"Self-blame":0.60,"Appetite disturbance":0.20},text:"After all this, will I have scars? Last Saturday, my mom wanted to see my hands, but I didn’t dare show her—I was afraid she’d scold me."},
+  {date:"2020-04-20",scores:{"Depressed mood":0.49,"Fatigue":0.72,"Suicidal thoughts":0.51,"Self-blame":0.55,"Appetite disturbance":0.40},text:"Today I mechanically ate just to finish. I can’t sleep—I really don’t want meds, but I took them. First time in a long while."}
+];
+
+
+// Transform raw data into the format expected by the visualization
+const symptoms = {
+    "Depressed Mood": {
+        description: "Example post: <em>Just existing, not really living. The world feels colorless and empty.</em>",
+        data: rawData.map(item => ({
+            date: item.date,
+            score: item.scores["Depressed mood"],
+            text: item.text
+        }))
+    },
+    "Fatigue": {
+        description: "Example post: <em>Exhausted from life. Just being alive feels draining.</em>",
+        data: rawData.map(item => ({
+            date: item.date,
+            score: item.scores["Fatigue"],
+            text: item.text
+        }))
+    },
+    "Suicidal Thoughts": {
+        description: "Example post: <em>Standing by the window, wanting to jump... I'm leaving tonight, I hope it won't hurt.</em>",
+        data: rawData.map(item => ({
+            date: item.date,
+            score: item.scores["Suicidal thoughts"],
+            text: item.text
+        }))
+    },
+    "Self-Blame": {
+        description: "Example post: <em>I’m useless. Someone like me doesn’t deserve to be healed.</em>",
+        data: rawData.map(item => ({
+            date: item.date,
+            score: item.scores["Self-blame"],
+            text: item.text
+        }))
+    },
+    "Appetite Disturbance": {
+        description: "Example post: <em>I have no appetite at all, no interest in food.</em>",
+        data: rawData.map(item => ({
+            date: item.date,
+            score: item.scores["Appetite disturbance"],
+            text: item.text
+        }))
+    }
+};
+
+        // Process data into 14-day periods
+        function processData(symptomData) {
+            const startDate = new Date("2019-10-16");
+            const endDate = new Date("2020-04-20");
+            const periodDays = 14;
+
+            // Calculate number of periods
+            const totalDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
+            const numPeriods = Math.ceil(totalDays / periodDays);
+
+            // Initialize periods
+            const periods = Array.from({length: numPeriods}, (_, i) => {
+                const periodStart = new Date(startDate);
+                periodStart.setDate(periodStart.getDate() + i * periodDays);
+                return {
+                    start: new Date(periodStart),
+                    end: new Date(new Date(periodStart).setDate(periodStart.getDate() + periodDays - 1)),
+                    posts: [],
+                    maxScore: 0,
+                    representativePost: null
+                };
+            });
+
+            // Assign posts to periods and find max score
+            symptomData.forEach(post => {
+                const postDate = new Date(post.date);
+                const periodIndex = Math.floor((postDate - startDate) / (1000 * 60 * 60 * 24 * periodDays));
+
+                if (periodIndex >= 0 && periodIndex < periods.length) {
+                    periods[periodIndex].posts.push(post);
+                    if (post.score > periods[periodIndex].maxScore) {
+                        periods[periodIndex].maxScore = post.score;
+                        periods[periodIndex].representativePost = post;
+                    }
+                }
+            });
+
+            // Fill empty periods with nearest post
+            let lastPost = null;
+            for (let i = 0; i < periods.length; i++) {
+                if (periods[i].posts.length > 0) {
+                    lastPost = periods[i].representativePost;
+                } else if (lastPost) {
+                    periods[i].representativePost = lastPost;
+                    periods[i].maxScore = lastPost.score * 0.8; // Reduce score for carried-over posts
+                }
+            }
+
+            // Fill forward if needed
+            let nextPost = null;
+            for (let i = periods.length - 1; i >= 0; i--) {
+                if (periods[i].posts.length > 0) {
+                    nextPost = periods[i].representativePost;
+                } else if (nextPost) {
+                    periods[i].representativePost = nextPost;
+                    periods[i].maxScore = nextPost.score * 0.8; // Reduce score for carried-over posts
+                }
+            }
+
+            return periods.map(period => ({
+                date: period.start,
+                score: period.maxScore,
+                post: period.representativePost
+            }));
+        }
+
+        // Create visualization
+        function createVisualization() {
+            const container = d3.select("#visualization");
+
+            Object.entries(symptoms).forEach(([symptom, data]) => {
+                const processedData = processData(data.data);
+
+                // Create a container for this symptom's chart
+                const chartContainer = container.append("div")
+                    .attr("class", "chart-container");
+
+                // Add left-aligned symptom title above the chart
+                chartContainer.append("div")
+                    .attr("class", "symptom-title")
+                    .text(symptom);
+
+                // Add description below the title
+                chartContainer.append("div")
+                    .attr("class", "symptom-desc")
+                    .html(data.description);
+
+                // Create SVG for the chart
+                const svg = chartContainer.append("svg")
+                    .attr("width", 1000)
+                    .attr("height", 400);
+
+                // Set up margins and dimensions
+                const margin = {top: 20, right: 30, bottom: 80, left: 60};  // Adjusted top margin
+                const width = 1000 - margin.left - margin.right;
+                const height = 400 - margin.top - margin.bottom;
+
+                const chart = svg.append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                // Create scales
+                const x = d3.scaleTime()
+                    .domain(d3.extent(processedData, d => d.date))
+                    .range([0, width]);
+
+                const y = d3.scaleLinear()
+                    .domain([0, 1.1])
+                    .range([height, 0]);
+
+                // Create axes
+                const xAxis = d3.axisBottom(x)
+                    .ticks(d3.timeMonth.every(1))
+                    .tickFormat(d3.timeFormat("%Y-%m-%d"));
+
+                const yAxis = d3.axisLeft(y)
+                    .ticks(5);
+
+                chart.append("g")
+                    .attr("class", "axis x-axis")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(xAxis);
+
+                chart.append("g")
+                    .attr("class", "axis y-axis")
+                    .call(yAxis);
+
+                // Add axis labels
+                chart.append("text")
+                    .attr("class", "axis-label")
+                    .attr("transform", `translate(${width/2},${height + margin.bottom - 30})`)
+                    .style("text-anchor", "middle")
+                    .text("Date");
+
+                chart.append("text")
+                    .attr("class", "axis-label")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", -margin.left + 15)
+                    .attr("x", -height/2)
+                    .style("text-anchor", "middle")
+                    .text("Symptom severity");
+
+                // Create line generator
+                const line = d3.line()
+                    .x(d => x(d.date))
+                    .y(d => y(d.score));
+
+                // Add line to chart
+                chart.append("path")
+                    .datum(processedData)
+                    .attr("class", "line")
+                    .attr("d", line);
+
+                // Add post display area (initially hidden)
+                const postDisplay = chart.append("foreignObject")
+                    .attr("x", 0)
+                    .attr("y", height + 10)
+                    .attr("width", width)
+                    .attr("height", 60)
+                    .style("visibility", "hidden")
+                    .append("xhtml:div")
+                    .attr("class", "post-display");
+
+                // Add note below the chart (with reduced spacing)
+                chartContainer.append("div")
+                    .attr("class", "note")
+                    .text("Note: Hover over a point in the chart to view the corresponding symptom post.");
+
+                // Add dots with tooltips and click handlers
+                const tooltip = d3.select("body").append("div")
+                    .attr("class", "tooltip")
+                    .style("opacity", 0);
+
+                chart.selectAll(".dot")
+                    .data(processedData)
+                    .enter().append("circle")
+                    .attr("class", "dot")
+                    .attr("cx", d => x(d.date))
+                    .attr("cy", d => y(d.score))
+                    .attr("r", 5)
+                    .on("mouseover", function(event, d) {
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+
+                        tooltip.html(`<strong>${d.post.date}</strong><br/><br/>${d.post.text}`)
+                            .style("left", (event.pageX + 10) + "px")
+                            .style("top", (event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function() {
+                        tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    })
+                    .on("click", function(event, d) {
+                        // Update post display
+                        postDisplay.selectAll("*").remove();
+
+                        // Show the post display
+                        postDisplay.style("visibility", "visible")
+                            .append("div")
+                            .attr("class", "post-date")
+                            .text(`Post from ${d.post.date}`);
+
+                        postDisplay.append("div")
+                            .text(d.post.text);
+                    });
+            });
+        }
+
+        // Initialize visualization
+        createVisualization();
+    </script>
+</body>
+</html>
