@@ -31,7 +31,6 @@ class HieraWordDataset(Dataset):
         for param in bert.parameters():
             param.requires_grad = False
 
-        # 加载数据
         print('loading data from:', x_path, ',', y_path)
 
         for user in tqdm(x):
@@ -81,3 +80,4 @@ class HieraWordDataset(Dataset):
 
     def __len__(self):
         return len(self.y)
+
