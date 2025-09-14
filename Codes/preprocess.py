@@ -26,9 +26,8 @@ def get_args():
     return args
 
 def create(opt):
-    # 获取当前工作空间的路径
     current_directory = os.getcwd()
-    print("当前目录为：", current_directory)
+    print("Current directory：", current_directory)
 
     np.random.seed(opt.seed)
     random.seed(opt.seed)
@@ -87,7 +86,7 @@ def create(opt):
                             post_embedding = torch.tensor(post_embedding)
                         posts.append({'post': post['tweet_content'], 'post_embedding': post_embedding, 'time':
                             datetime.datetime.strptime(post['posting_time'][0:16], '%Y-%m-%d %H:%M')})
-                if len(posts) > 10:  # 预处理，删除帖子数少于10的用户
+                if len(posts) > 10:
                     users.append(posts)
         if 'normal' in data_path:
             if opt.embedding == 'BERT':
@@ -102,4 +101,5 @@ def create(opt):
 
 if __name__ == '__main__':
     opt = get_args()
+
     create(opt)
